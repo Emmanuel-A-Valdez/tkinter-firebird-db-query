@@ -1,0 +1,7 @@
+# To make an executable
+
+# Windows
+pyinstaller --onefile --windowed existencias.py
+
+# MacOS
+pyinstaller --onefile --add-binary='/System/Library/Frameworks/Tk.framework/Tk':'tk' --add-binary='/System/Library/Frameworks/Tcl.framework/Tcl':'tcl' existencias.py
