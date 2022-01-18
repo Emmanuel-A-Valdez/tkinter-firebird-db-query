@@ -150,9 +150,18 @@ class Application(Frame):
         self.warehouse_label = Label(
             self.input_frame, text="Almacen", font=("bold", 10)
         )
-        self.warehouse_label.place(relwidth=0.27, relheight=0.5)
+        self.warehouse_label.place(relwidth=0.15, relheight=0.5)
         self.warehouse_entry = Entry(self.input_frame, textvariable=self.warehouse_text)
-        self.warehouse_entry.place(relx=0.27, relwidth=0.73, relheight=0.5)
+        self.warehouse_entry.place(relx=0.15, relwidth=0.35, relheight=0.5)
+
+        # No Inventory
+        self.inventory_text = StringVar()
+        self.inventory_label = Label(
+            self.input_frame, text="Inventario", font=("bold", 10)
+        )
+        self.inventory_label.place(relx=0.5, relwidth=0.15, relheight=0.5)
+        self.inventory_entry = Entry(self.input_frame, textvariable=self.inventory_text)
+        self.inventory_entry.place(relx=0.65, relwidth=0.35, relheight=0.5)
 
         # Button
         self.submit_btn = Button(
@@ -197,9 +206,18 @@ class Application(Frame):
         # Name
         self.name_text = StringVar()
         self.name_label = Label(self.input_frame, text="Nombre", font=("bold", 10))
-        self.name_label.place(relwidth=0.27, relheight=0.5)
+        self.name_label.place(relwidth=0.15, relheight=0.5)
         self.name_entry = Entry(self.input_frame, textvariable=self.name_text)
-        self.name_entry.place(relx=0.27, relwidth=0.73, relheight=0.5)
+        self.name_entry.place(relx=0.15, relwidth=0.35, relheight=0.5)
+
+        # Warehouse
+        self.warehouse_text = StringVar()
+        self.warehouse_label = Label(
+            self.input_frame, text="Almacen", font=("bold", 10)
+        )
+        self.warehouse_label.place(relx=0.51, relwidth=0.15, relheight=0.5)
+        self.warehouse_entry = Entry(self.input_frame, textvariable=self.warehouse_text)
+        self.warehouse_entry.place(relx=0.65, relwidth=0.35, relheight=0.5)
 
         # Name search button
         self.name_submit_btn = Button(
@@ -222,14 +240,24 @@ class Application(Frame):
             return
 
         # Execute the SELECT statement:
-        cur.execute(
-            f"""SELECT DISTINCT a.articulo_id, a.nombre, d.clave_articulo, ex.existencia, ex.valor_unitario, ex.valor_total 
+        if self.inventory_text.get() == "0":
+            cur.execute(
+                f"""SELECT DISTINCT a.articulo_id, a.nombre, d.clave_articulo, ex.existencia, ex.valor_unitario, ex.valor_total 
             FROM articulos a
             JOIN doctos_in_det d ON a.articulo_id = d.articulo_id
             LEFT OUTER JOIN exival_art(a.articulo_id,{warehouse},current_date,'S') ex ON a.articulo_id = ex.articulo_id
-            WHERE d.clave_articulo IS NOT NULL
+            WHERE d.clave_articulo IS NOT NULL AND ex.existencia <= 0
             ORDER BY a.nombre ASC;"""
-        )
+            )
+        else:
+            cur.execute(
+                f"""SELECT DISTINCT a.articulo_id, a.nombre, d.clave_articulo, ex.existencia, ex.valor_unitario, ex.valor_total 
+                FROM articulos a
+                JOIN doctos_in_det d ON a.articulo_id = d.articulo_id
+                LEFT OUTER JOIN exival_art(a.articulo_id,{warehouse},current_date,'S') ex ON a.articulo_id = ex.articulo_id
+                WHERE d.clave_articulo IS NOT NULL
+                ORDER BY a.nombre ASC;"""
+            )
 
         # Retrieve columns as a sequence and print that sequence:
         item_details = cur.fetchall()
@@ -366,6 +394,7 @@ class Application(Frame):
             self.code_entry.delete(0, END)
             self.warehouse_entry.delete(0, END)
         except:
+            self.inventory_entry.delete(0, END)
             self.warehouse_entry.delete(0, END)
 
 
