@@ -79,11 +79,36 @@ class Application(Frame):
         self.name_submit_btn = Button(
             self.name_search_frame,
             text="Mandar Peticion",
-            command=lambda: self.fuzzy_name_search(self.name_text.get()),
+            command=lambda: self.fuzzy_name_search(
+                self.name_text.get(),
+                self.warehouse_text.get(),
+            ),
         )
         self.name_submit_btn.place(
             relx=0.5, rely=0.55, relwidth=1, relheight=0.48, anchor="n"
         )
+
+        # Input frame
+        self.input_frame = Frame(self.query_frame, bg="#cccccc", bd=2)
+        self.input_frame.place(
+            relx=0.5, rely=0.245, relwidth=0.95, relheight=0.1, anchor="n"
+        )
+
+        # Code
+        self.code_text = StringVar()
+        self.code_label = Label(self.input_frame, text="Codigo", font=("bold", 10))
+        self.code_label.place(relwidth=0.15, relheight=0.5)
+        self.code_entry = Entry(self.input_frame, textvariable=self.code_text)
+        self.code_entry.place(relx=0.15, relwidth=0.35, relheight=0.5)
+
+        # Warehouse
+        self.warehouse_text = StringVar()
+        self.warehouse_label = Label(
+            self.input_frame, text="Almacen", font=("bold", 10)
+        )
+        self.warehouse_label.place(relx=0.51, relwidth=0.15, relheight=0.5)
+        self.warehouse_entry = Entry(self.input_frame, textvariable=self.warehouse_text)
+        self.warehouse_entry.place(relx=0.65, relwidth=0.35, relheight=0.5)
 
         # List item selection frame
         self.li_frame = Frame(self.query_frame, bg="#cccccc")
@@ -129,22 +154,7 @@ class Application(Frame):
         cur = con.cursor()
 
     def list_inputs(self):
-        # Input frame
-        self.input_frame = Frame(self.query_frame, bg="#cccccc", bd=2)
-        self.input_frame.place(
-            relx=0.5, rely=0.245, relwidth=0.95, relheight=0.1, anchor="n"
-        )
-
-        # Warehouse
-        self.warehouse_text = StringVar()
-        self.warehouse_label = Label(
-            self.input_frame, text="Almacen", font=("bold", 10)
-        )
-        self.warehouse_label.place(relwidth=0.15, relheight=0.5)
-        self.warehouse_entry = Entry(self.input_frame, textvariable=self.warehouse_text)
-        self.warehouse_entry.place(relx=0.15, relwidth=0.85, relheight=0.5)
-
-        # Buttons
+        # Button
         self.submit_btn = Button(
             self.input_frame,
             text="Mandar Peticion",
@@ -155,29 +165,7 @@ class Application(Frame):
         )
 
     def item_inputs(self):
-        # Input frame
-        self.input_frame = Frame(self.query_frame, bg="#cccccc", bd=2)
-        self.input_frame.place(
-            relx=0.5, rely=0.245, relwidth=0.95, relheight=0.1, anchor="n"
-        )
-
-        # Code
-        self.code_text = StringVar()
-        self.code_label = Label(self.input_frame, text="Codigo", font=("bold", 10))
-        self.code_label.place(relwidth=0.15, relheight=0.5)
-        self.code_entry = Entry(self.input_frame, textvariable=self.code_text)
-        self.code_entry.place(relx=0.15, relwidth=0.35, relheight=0.5)
-
-        # Warehouse
-        self.warehouse_text = StringVar()
-        self.warehouse_label = Label(
-            self.input_frame, text="Almacen", font=("bold", 10)
-        )
-        self.warehouse_label.place(relx=0.51, relwidth=0.15, relheight=0.5)
-        self.warehouse_entry = Entry(self.input_frame, textvariable=self.warehouse_text)
-        self.warehouse_entry.place(relx=0.65, relwidth=0.35, relheight=0.5)
-
-        # Buttons
+        # Button
         self.submit_btn = Button(
             self.input_frame,
             text="Mandar Peticion",
@@ -199,32 +187,38 @@ class Application(Frame):
         # Execute the SELECT statement:
         cur.execute(
             f"""SELECT DISTINCT a.articulo_id, a.nombre, d.clave_articulo, ex.existencia, ex.valor_unitario, ex.valor_total 
-            FROM articulos a 
-            JOIN doctos_in_det d ON a.articulo_id = d.articulo_id 
-            LEFT OUTER JOIN exival_art(a.articulo_id,{warehouse},current_date,'S') ex ON a.articulo_id = ex.articulo_id 
+            FROM articulos a
+            JOIN doctos_in_det d ON a.articulo_id = d.articulo_id
+            LEFT OUTER JOIN exival_art(a.articulo_id,{warehouse},current_date,'S') ex ON a.articulo_id = ex.articulo_id
+            WHERE d.clave_articulo IS NOT NULL
             ORDER BY a.nombre ASC;"""
         )
 
         # Retrieve columns as a sequence and print that sequence:
         item_details = cur.fetchall()
-
-        items_list = []
-        for i in item_details:
-            item = {}
-
-            item["Codigo:"] = i[2]
-            item["Nombre:"] = i[1].replace(" ", "_")
-            item["Existencia:"] = str(i[3])
-            item["Precio_unitario:"] = f"{i[4]:.2f}"
-            item["Total:"] = f"{i[5]:.2f}"
-            items_list.append(item)
-
         self.clear_text()
         self.item_list.delete(0, END)
-
-        for item_dict in items_list:
-            for k, v in item_dict.items():
-                self.item_list.insert(END, (k, v))
+        for i in item_details:
+            self.item_list.insert(
+                END,
+                f"""Codigo: {i[2]}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Nombre: {i[1].replace(" ", "_")}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Existencia: {str(i[3])}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Precio Unitario: {i[4]:.2f}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Total: {i[5]:.2f}""",
+            )
             self.item_list.insert(
                 END,
                 "-----------------------------------------------------------------------------------------------------",
@@ -253,51 +247,71 @@ class Application(Frame):
         # Retrieve columns as a sequence and print that sequence:
         item_details = cur.fetchall()
 
-        item_dict = {}
-
+        self.clear_text()
+        self.item_list.delete(0, END)
         try:
-            item_dict["Codigo:"] = item_details[0][2]
-            item_dict["Nombre:"] = item_details[0][1].replace(" ", "_")
-            item_dict["Existencia:"] = str(item_details[0][3])
-            item_dict["Precio_unitario:"] = f"{item_details[0][4]:.2f}"
-            item_dict["Total:"] = f"{item_details[0][5]:.2f}"
+            self.item_list.insert(
+                END,
+                f"""Codigo: {item_details[0][2]}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Nombre: {item_details[0][1].replace(" ", "_")}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Existencia: {str(item_details[0][3])}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Precio Unitario: {item_details[0][4]:.2f}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Total: {item_details[0][5]:.2f}""",
+            )
         except IndexError:
             messagebox.showerror("Codigo no existe", "Por favor intente de nuevo.")
             self.clear_text()
             return
 
-        self.clear_text()
-        self.item_list.delete(0, END)
-
-        for row in item_dict.items():
-            self.item_list.insert(END, row)
-
-    def fuzzy_name_search(self, param):
+    def fuzzy_name_search(self, param, warehouse):
         # Execute the SELECT statement:
         cur.execute(
-            f"""SELECT DISTINCT a.nombre, d.clave_articulo 
+            f"""SELECT DISTINCT a.nombre, d.clave_articulo, ex.existencia, ex.valor_unitario, ex.valor_total
             FROM articulos a 
             JOIN doctos_in_det d ON a.articulo_id = d.articulo_id 
-            WHERE lower(a.nombre) LIKE '%{param.lower()}%' 
-            ;"""
+            LEFT OUTER JOIN exival_art(a.articulo_id,{warehouse},current_date,'S') ex ON a.articulo_id = ex.articulo_id
+            WHERE lower(a.nombre) LIKE '%{param.lower()}%' AND d.clave_articulo IS NOT NULL 
+            ORDER BY a.nombre ASC;
+            """
         )
 
         # Retrieve columns as a sequence and print that sequence:
         item_details = cur.fetchall()
-
-        items_list = []
-        for i in item_details:
-            item = {}
-            item["Codigo:"] = i[1]
-            item["Nombre:"] = i[0].replace(" ", "_")
-            items_list.append(item)
-
         self.name_entry.delete(0, END)
         self.item_list.delete(0, END)
-
-        for item_dict in items_list:
-            for k, v in item_dict.items():
-                self.item_list.insert(END, (k, v))
+        for i in item_details:
+            self.item_list.insert(
+                END,
+                f"""Codigo: {i[1]}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Nombre: {i[0].replace(" ", "_")}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Existencia: {str(i[2])}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Precio Unitario: {i[3]:.2f}""",
+            )
+            self.item_list.insert(
+                END,
+                f"""Total: {i[4]:.2f}""",
+            )
             self.item_list.insert(
                 END,
                 "-----------------------------------------------------------------------------------------------------",
